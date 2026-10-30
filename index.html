@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Tuorhence</title>
+<style>
+  :root{
+    --bg:#0d0907; --panel:#1a120d; --panel2:#241912; --border:#6b4a22;
+    --gold:#d4a73c; --gold-l:#f1d27a; --text:#e8dcc4; --muted:#a8957a; --red:#a32020;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at top,#2a1a0f 0%,var(--bg) 60%);color:var(--text);
+    font-family:Georgia,"Times New Roman",serif;min-height:100vh;padding:20px}
+  .wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px}
+  h1{margin:0 0 4px;text-align:center;color:var(--gold-l);letter-spacing:3px;text-transform:uppercase;font-size:1.5rem;
+    text-shadow:0 0 12px rgba(212,167,60,.4)}
+  .quad{background:linear-gradient(180deg,var(--panel2),var(--panel));border:2px solid var(--border);
+    border-radius:6px;padding:16px;box-shadow:inset 0 0 0 1px #000,0 4px 14px rgba(0,0,0,.6)}
+  .quad h2{margin:0 0 12px;font-size:1rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px;
+    border-bottom:1px solid var(--border);padding-bottom:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+  .quad h2 .avail{color:var(--gold-l);font-size:.9rem;letter-spacing:1px}
+  .avail.zero{color:var(--muted)}
+  /* header */
+  .head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:center}
+  .head .center{display:flex;flex-direction:column;gap:10px;align-items:center}
+  label{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px}
+  input,select{background:#0a0705;color:var(--gold-l);border:1px solid var(--border);border-radius:3px;
+    padding:7px 9px;font-family:inherit;font-size:1rem;width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 6px rgba(212,167,60,.5)}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .name input{font-size:1.2rem;text-align:left;font-weight:bold}
+  .center .row{display:flex;gap:10px;width:100%}
+  .center .row>div{flex:1}
+  .bars{display:grid;gap:10px}
+  .bar{height:16px;background:#0a0705;border:1px solid var(--border);border-radius:3px;overflow:hidden}
+  .bar i{display:block;height:100%}
+  .bar.xp i{width:62%;background:linear-gradient(90deg,#7a5a14,var(--gold))}
+  .bar.next i{width:100%;background:linear-gradient(90deg,#3a2a14,#6b4a22)}
+  /* fields */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .field small{display:block;color:var(--muted);font-size:.72rem;margin-top:2px;min-height:1em}
+  /* results */
+  .list{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 24px;margin:0;padding:0;list-style:none}
+  .list li{display:flex;justify-content:space-between;border-bottom:1px dotted #4a3319;padding:5px 0}
+  .list li span:first-child{color:var(--muted)}
+  .list li span:last-child{color:var(--gold-l);font-weight:bold}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  /* toast */
+  #toasts{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:99;max-width:min(360px,calc(100vw - 32px))}
+  .toast{background:#5c0f0f;border:1px solid #e04040;color:#ffd9d9;padding:10px 14px;border-radius:4px;
+    box-shadow:0 4px 14px rgba(0,0,0,.7);font-size:.9rem;animation:in .25s ease}
+  .toast.out{opacity:0;transform:translateX(20px);transition:.3s}
+  @keyframes in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+  @media(max-width:860px){
+    .head{grid-template-columns:1fr}.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:520px){.grid{grid-template-columns:1fr}.list{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+<div class="wrap">
+  <h1>Calculadora de Tuorhence</h1>
+
+  <!-- 1º Quadrante -->
+  <section class="quad">
+    <h2>1º Quadrante — Personagem</h2>
+    <div class="head">
+      <div class="name">
+        <label for="nome">Nome do personagem</label>
+        <input id="nome" type="text" value="Guerreiro de Tuohence" maxlength="40">
+      </div>
+      <div class="center">
+        <div class="row">
+          <div><label for="level">Level (1–299)</label><input id="level" type="number" min="1" max="299" value="1"></div>
+          <div><label for="reset">Reset</label><select id="reset"></select></div>
+        </div>
+      </div>
+      <div class="bars">
+        <div><label>Experiência atual</label><div class="bar xp"><i></i></div></div>
+        <div><label>Experiência para o próximo level</label><div class="bar next"><i></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2º Quadrante -->
+  <section class="quad">
+    <h2>2º Quadrante — Atributos <span class="avail" id="attrAvail"></span></h2>
+    <div class="grid" id="attrGrid"></div>
+  </section>
+
+  <!-- 3º Quadrante -->
+  <section class="quad">
+    <h2>3º Quadrante — Maestrias <span class="avail" id="mastAvail"></span></h2>
+    <div class="grid" id="mastGrid"></div>
+  </section>
+
+  <div class="two">
+    <!-- 4º Quadrante -->
+    <section class="quad">
+      <h2>4º Quadrante — Status Finais</h2>
+      <ul class="list" id="finais" style="grid-template-columns:1fr"></ul>
+    </section>
+    <!-- 5º Quadrante -->
+    <section class="quad">
+      <h2>5º Quadrante — Bônus</h2>
+      <ul class="list" id="bonus" style="grid-template-columns:1fr"></ul>
+    </section>
+  </div>
+</div>
+
+<script>
+/* Se true, os bônus só contam a cada bloco completo de 10 pontos (ex.: 19 pts = 1 bloco).
+   Se false, o cálculo é proporcional (ex.: 15 pts = 1,5 bloco). */
+const USAR_BLOCOS_COMPLETOS = false;
+
+const ATRIBUTOS = [
+  {id:'forca', nome:'Força', base:10},
+  {id:'constituicao', nome:'Constituição', base:10},
+  {id:'agilidade', nome:'Agilidade', base:10},
+  {id:'destreza', nome:'Destreza', base:10},
+  {id:'mente', nome:'Mente', base:10},
+  {id:'espirito', nome:'Espírito', base:10},
+];
+const MAESTRIAS = [
+  {id:'cb', nome:'CB', desc:'Adiciona acerto', base:8},
+  {id:'esqf', nome:'ESQ.F', desc:'Adiciona esquiva física', base:5},
+  {id:'ea', nome:'EA', desc:'Adiciona acerto mágico', base:8},
+  {id:'pc', nome:'PC', desc:'Dano a guerreiro 1 mão', base:0},
+  {id:'db', nome:'DB', desc:'Dano a guerreiro 2 mãos', base:0},
+  {id:'dm', nome:'DM', desc:'Dano mágico', base:0},
+];
+
+const $ = id => document.getElementById(id);
+const levelEl = $('level'), resetEl = $('reset');
+
+for (let i = 0; i <= 20; i++) resetEl.add(new Option(i, i));
+
+function buildFields(list, container){
+  container.innerHTML = list.map(f => `
+    <div class="field">
+      <label for="${f.id}">${f.nome}</label>
+      <input id="${f.id}" type="number" inputmode="numeric" min="${f.base}" value="${f.base}" data-base="${f.base}">
+      <small>${f.desc || ''}</small>
+    </div>`).join('');
+}
+buildFields(ATRIBUTOS, $('attrGrid'));
+buildFields(MAESTRIAS, $('mastGrid'));
+
+/* ---------- Toast ---------- */
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  $('toasts').appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ---------- Helpers ---------- */
+function getLevel(){
+  let l = parseInt(levelEl.value, 10);
+  if (isNaN(l)) l = 1;
+  return Math.min(299, Math.max(1, l));
+}
+const getReset = () => parseInt(resetEl.value, 10) || 0;
+const totalAttr = () => 30 + 10*(getLevel()-1) + 100*getReset();
+const totalMast = () => 15 + 5*(getLevel()-1) + 50*getReset();
+
+const val = f => { const v = parseInt($(f.id).value, 10); return isNaN(v) ? f.base : Math.max(f.base, v); };
+const spent = list => list.reduce((s,f)=> s + (val(f) - f.base), 0);
+
+/* ---------- Validação ---------- */
+function validateGroup(list, total, changedField, label){
+  const others = list.filter(f => f !== changedField).reduce((s,f)=> s + (val(f)-f.base), 0);
+  const maxPts = Math.max(0, total - others);
+  const maxVal = changedField.base + maxPts;
+  const cur = parseInt($(changedField.id).value, 10);
+  if (!isNaN(cur) && cur > maxVal){
+    $(changedField.id).value = maxVal;
+    toast(`Pontos de ${label} insuficientes! ${changedField.nome} foi limitado a ${maxVal}.`);
+  }
+}
+
+function enforceTotals(){
+  // Ao reduzir level/reset, se o gasto passar do total, volta tudo para o valor inicial
+  if (spent(ATRIBUTOS) > totalAttr()){
+    ATRIBUTOS.forEach(f => $(f.id).value = f.base);
+    toast('Level/Reset reduzido: atributos redefinidos por excesso de pontos.');
+  }
+  if (spent(MAESTRIAS) > totalMast()){
+    MAESTRIAS.forEach(f => $(f.id).value = f.base);
+    toast('Level/Reset reduzido: maestrias redefinidas por excesso de pontos.');
+  }
+}
+
+/* ---------- Render ---------- */
+const fmt = (n, d=1) => {
+  const r = Math.round(n * 100) / 100;
+  return r.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:2});
+};
+
+function render(){
+  const availA = totalAttr() - spent(ATRIBUTOS);
+  const availM = totalMast() - spent(MAESTRIAS);
+  $('attrAvail').textContent = `Pontos disponíveis: ${availA}`;
+  $('mastAvail').textContent = `Pontos disponíveis: ${availM}`;
+  $('attrAvail').classList.toggle('zero', availA === 0);
+  $('mastAvail').classList.toggle('zero', availM === 0);
+
+  const b = id => { const v = val(ATRIBUTOS.find(a=>a.id===id)); return USAR_BLOCOS_COMPLETOS ? Math.floor(v/10) : v/10; };
+  const F = b('forca'), C = b('constituicao'), A = b('agilidade'),
+        D = b('destreza'), M = b('mente'), E = b('espirito');
+
+  const finais = [
+    ['Dano Físico',        2*F],
+    ['Vida',               1*F + 20*C],
+    ['Fôlego',             4.1*F + 4.3*A],
+    ['Dano Mágico',        1*M],
+    ['Energia',            4.9*M + 6.9*E],
+    ['Defesa Mágica',      0.4*E],
+    ['Dano Magias de Área',1*E],
+  ];
+  const bonus = [
+    ['Esquiva (Física e Mágica)',                   5*A, ''],
+    ['Velocidade de Movimento',                     0.1*A, '%'],
+    ['Acerto (Físico e Mágico)',                    3*D, ''],
+    ['Menos tempo entre ataques',                   0.1*D, '%'],
+    ['Chance de sangramento/queimadura/lentidão/veneno', 0.1*D, '%'],
+    ['Chance de violência',                         0.2*D, '%'],
+  ];
+  $('finais').innerHTML = finais.map(([n,v]) => `<li><span>${n}</span><span>+${fmt(v)}</span></li>`).join('');
+  $('bonus').innerHTML  = bonus.map(([n,v,u]) => `<li><span>${n}</span><span>+${fmt(v)}${u}</span></li>`).join('');
+}
+
+/* ---------- Eventos ---------- */
+function bindGroup(list, totalFn, label){
+  list.forEach(f => {
+    const el = $(f.id);
+    el.addEventListener('input', () => { validateGroup(list, totalFn(), f, label); render(); });
+    el.addEventListener('change', () => {
+      let v = parseInt(el.value, 10);
+      if (isNaN(v) || v < f.base) el.value = f.base;
+      validateGroup(list, totalFn(), f, label);
+      render();
+    });
+  });
+}
+bindGroup(ATRIBUTOS, totalAttr, 'atributo');
+bindGroup(MAESTRIAS, totalMast, 'maestria');
+
+levelEl.addEventListener('input', () => {
+  const raw = parseInt(levelEl.value, 10);
+  if (!isNaN(raw) && (raw > 299 || raw < 1)){
+    levelEl.value = raw > 299 ? 299 : 1;
+    toast('O level deve estar entre 1 e 299.');
+  }
+  enforceTotals(); render();
+});
+levelEl.addEventListener('change', () => { levelEl.value = getLevel(); enforceTotals(); render(); });
+resetEl.addEventListener('change', () => { enforceTotals(); render(); });
+
+render();
+</script>
+</body>
+</html>
