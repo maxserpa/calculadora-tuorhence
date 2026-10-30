@@ -6,112 +6,156 @@
 <title>Calculadora de Tuorhence</title>
 <style>
   :root{
-    --bg:#0d0907; --panel:#1a120d; --panel2:#241912; --border:#6b4a22;
-    --gold:#d4a73c; --gold-l:#f1d27a; --text:#e8dcc4; --muted:#a8957a; --red:#a32020;
+    --card:#15100b; --line:#3b2a17; --frame:#6a4a24; --input-bd:#5a4020;
+    --gold:#d9a441; --gold-l:#f0d58a; --text:#e9e0cf; --muted:#a79a82;
+    --green:#4ade6b; --blue:#5b9cf5; --orange:#e3a04e; --gray:#6b6b6b;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(ellipse at top,#2a1a0f 0%,var(--bg) 60%);color:var(--text);
-    font-family:Georgia,"Times New Roman",serif;min-height:100vh;padding:20px}
-  .wrap{max-width:1100px;margin:0 auto;display:grid;gap:16px}
-  h1{margin:0 0 4px;text-align:center;color:var(--gold-l);letter-spacing:3px;text-transform:uppercase;font-size:1.5rem;
-    text-shadow:0 0 12px rgba(212,167,60,.4)}
-  .quad{background:linear-gradient(180deg,var(--panel2),var(--panel));border:2px solid var(--border);
-    border-radius:6px;padding:16px;box-shadow:inset 0 0 0 1px #000,0 4px 14px rgba(0,0,0,.6)}
-  .quad h2{margin:0 0 12px;font-size:1rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px;
-    border-bottom:1px solid var(--border);padding-bottom:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
-  .quad h2 .avail{color:var(--gold-l);font-size:.9rem;letter-spacing:1px}
-  .avail.zero{color:var(--muted)}
-  /* header */
-  .head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-items:center}
-  .head .center{display:flex;flex-direction:column;gap:10px;align-items:center}
-  label{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:3px}
-  input,select{background:#0a0705;color:var(--gold-l);border:1px solid var(--border);border-radius:3px;
-    padding:7px 9px;font-family:inherit;font-size:1rem;width:100%}
-  input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 6px rgba(212,167,60,.5)}
-  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  body{margin:0;background:#070504;color:var(--text);min-height:100vh;padding:20px;
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+  .frame{max-width:760px;margin:0 auto;background:linear-gradient(180deg,#17100a,#0e0a07);
+    border:3px solid var(--frame);border-radius:10px;
+    box-shadow:inset 0 0 0 1px #000,0 0 0 1px #000,0 8px 30px rgba(0,0,0,.7)}
+  .titlebar{padding:20px 16px 18px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-family:Georgia,"Palatino Linotype",serif;font-weight:400;font-variant:small-caps;
+    letter-spacing:3px;font-size:1.9rem;color:var(--gold-l);text-shadow:0 0 14px rgba(217,164,65,.35)}
+
+  /* inputs */
+  input,select{background:#0a0705;color:#fff;border:1px solid var(--input-bd);border-radius:4px;
+    padding:6px 8px;font-family:inherit;font-size:1rem}
+  input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 6px rgba(217,164,65,.5)}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield;text-align:center}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  .name input{font-size:1.2rem;text-align:left;font-weight:bold}
-  .center .row{display:flex;gap:10px;width:100%}
-  .center .row>div{flex:1}
-  .bars{display:grid;gap:10px}
-  .bar{height:16px;background:#0a0705;border:1px solid var(--border);border-radius:3px;overflow:hidden}
-  .bar i{display:block;height:100%}
-  .bar.xp i{width:62%;background:linear-gradient(90deg,#7a5a14,var(--gold))}
-  .bar.next i{width:100%;background:linear-gradient(90deg,#3a2a14,#6b4a22)}
-  /* fields */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .field small{display:block;color:var(--muted);font-size:.72rem;margin-top:2px;min-height:1em}
-  /* results */
-  .list{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 24px;margin:0;padding:0;list-style:none}
-  .list li{display:flex;justify-content:space-between;border-bottom:1px dotted #4a3319;padding:5px 0}
-  .list li span:first-child{color:var(--muted)}
-  .list li span:last-child{color:var(--gold-l);font-weight:bold}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  /* topo */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:18px 24px;border-bottom:1px solid var(--line)}
+  .top label{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .nome{display:flex;align-items:center;gap:8px}
+  .nome input{width:190px;font-weight:600;text-align:left}
+  .lvlbox{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+  .lvlbox label{color:var(--text);font-size:.9rem;font-weight:600;text-transform:none;letter-spacing:0}
+  .lvlbox input{width:52px;color:var(--gold);font-size:1.1rem;border-color:var(--gold)}
+  .exp{display:grid;gap:6px}
+  .exp div{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+  .exp span{font-family:Consolas,"Courier New",monospace;font-size:.72rem;color:var(--muted);text-transform:uppercase}
+  .exp output{display:block;min-width:104px;text-align:right;background:#0a0705;border:1px solid var(--input-bd);
+    border-radius:4px;padding:3px 8px;font-family:Consolas,"Courier New",monospace;font-size:.82rem;color:#fff}
+
+  /* seções */
+  .sec{padding:18px 24px;border-bottom:1px solid var(--line)}
+  .sec:last-child{border-bottom:none}
+  .sechead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+  h2{margin:0 0 12px;font-family:Georgia,"Palatino Linotype",serif;font-weight:400;font-size:1.15rem;
+    letter-spacing:1px;color:var(--gold)}
+  .sechead h2{margin:0}
+  h2.center{text-align:center}
+  .pts{text-align:right;line-height:1.1}
+  .pts small{display:block;font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:#6aa6ff}
+  .pts strong{font-size:1.6rem;color:var(--green)}
+  .pts strong.zero{color:var(--muted)}
+
+  .cards6{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+  .cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:6px}
+  .field{padding:12px 10px 12px;text-align:center}
+  .field label{display:block;font-size:.8rem;font-weight:700;margin-bottom:8px}
+  .field input{width:100%;font-weight:600}
+
+  .bonus{padding:10px 12px 12px}
+  .bonus h3{margin:0 0 6px;padding-bottom:4px;border-bottom:1px dotted #4a3319;font-family:Georgia,"Palatino Linotype",serif;
+    font-weight:400;font-size:.85rem;color:var(--gold);letter-spacing:.5px}
+  .bonus ul{list-style:none;margin:0;padding:0}
+  .bonus li{font-size:.78rem;line-height:1.6;color:#d8cfbd}
+  .bonus li b{color:#e0b45a;font-weight:600}
+
+  .final{padding:14px 8px;text-align:center}
+  .final small{display:block;font-size:.66rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .final strong{display:block;margin-top:4px;font-size:1.9rem;font-weight:700}
+  .final.fis strong{color:var(--orange)}
+  .final.mag strong{color:var(--blue)}
+  .final.zero strong{color:var(--gray)}
+
   /* toast */
-  #toasts{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:99;max-width:min(360px,calc(100vw - 32px))}
+  #toasts{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:99;
+    max-width:min(360px,calc(100vw - 32px))}
   .toast{background:#5c0f0f;border:1px solid #e04040;color:#ffd9d9;padding:10px 14px;border-radius:4px;
     box-shadow:0 4px 14px rgba(0,0,0,.7);font-size:.9rem;animation:in .25s ease}
   .toast.out{opacity:0;transform:translateX(20px);transition:.3s}
   @keyframes in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-  @media(max-width:860px){
-    .head{grid-template-columns:1fr}.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}
+
+  @media(max-width:640px){
+    .cards6{grid-template-columns:repeat(3,1fr)}
+    .top,.sec{padding-left:16px;padding-right:16px}
+    .cards3{grid-template-columns:repeat(2,1fr)}
+    h1{font-size:1.5rem}
   }
-  @media(max-width:520px){.grid{grid-template-columns:1fr}.list{grid-template-columns:1fr}}
+  @media(max-width:400px){
+    .cards6{grid-template-columns:repeat(2,1fr)}
+    .cards3{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
 <div id="toasts"></div>
-<div class="wrap">
-  <h1>Calculadora de Tuorhence</h1>
 
-  <!-- 1º Quadrante -->
-  <section class="quad">
-    <h2>1º Quadrante — Personagem</h2>
-    <div class="head">
-      <div class="name">
-        <label for="nome">Nome do personagem</label>
-        <input id="nome" type="text" value="Guerreiro de Tuohence" maxlength="40">
-      </div>
-      <div class="center">
-        <div class="row">
-          <div><label for="level">Level (1–299)</label><input id="level" type="number" min="1" max="299" value="1"></div>
-          <div><label for="reset">Reset</label><select id="reset"></select></div>
-        </div>
-      </div>
-      <div class="bars">
-        <div><label>Experiência atual</label><div class="bar xp"><i></i></div></div>
-        <div><label>Experiência para o próximo level</label><div class="bar next"><i></i></div></div>
-      </div>
+<main class="frame">
+  <header class="titlebar"><h1>Calculadora de Tuorhence</h1></header>
+
+  <!-- 1º Quadrante: cabeçalho -->
+  <section class="top">
+    <div class="nome">
+      <label for="nome">Nome:</label>
+      <input id="nome" type="text" value="Guerreiro de Tuohence" maxlength="40">
+    </div>
+    <div class="lvlbox">
+      <label for="level">Level:</label>
+      <input id="level" type="number" min="1" max="299" value="1">
+      <label for="reset">Reset:</label>
+      <select id="reset"></select>
+    </div>
+    <div class="exp">
+      <div><span>EXP Atual:</span><output id="expAtual"></output></div>
+      <div><span>Próx. Lvl:</span><output id="expProx"></output></div>
     </div>
   </section>
 
-  <!-- 2º Quadrante -->
-  <section class="quad">
-    <h2>2º Quadrante — Atributos <span class="avail" id="attrAvail"></span></h2>
-    <div class="grid" id="attrGrid"></div>
+  <!-- 2º Quadrante: atributos -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>Atributos</h2>
+      <div class="pts"><small>Pts de atributo disponíveis</small><strong id="attrAvail">30</strong></div>
+    </div>
+    <div class="cards6" id="attrGrid"></div>
   </section>
 
-  <!-- 3º Quadrante -->
-  <section class="quad">
-    <h2>3º Quadrante — Maestrias <span class="avail" id="mastAvail"></span></h2>
-    <div class="grid" id="mastGrid"></div>
+  <!-- 3º Quadrante: maestrias -->
+  <section class="sec">
+    <div class="sechead">
+      <h2>Maestrias</h2>
+      <div class="pts"><small>Pts de maestria disponíveis</small><strong id="mastAvail">15</strong></div>
+    </div>
+    <div class="cards6" id="mastGrid"></div>
   </section>
 
-  <div class="two">
-    <!-- 4º Quadrante -->
-    <section class="quad">
-      <h2>4º Quadrante — Status Finais</h2>
-      <ul class="list" id="finais" style="grid-template-columns:1fr"></ul>
-    </section>
-    <!-- 5º Quadrante -->
-    <section class="quad">
-      <h2>5º Quadrante — Bônus</h2>
-      <ul class="list" id="bonus" style="grid-template-columns:1fr"></ul>
-    </section>
-  </div>
-</div>
+  <!-- 4º Quadrante: bônus por atributo -->
+  <section class="sec">
+    <h2>Bônus Adquiridos pelos Atributos</h2>
+    <div class="cards3" id="bonus"></div>
+  </section>
+
+  <!-- 5º Quadrante: status finais -->
+  <section class="sec">
+    <h2 class="center">Status de Batalha Finais</h2>
+    <div class="cards3" id="finais"></div>
+  </section>
+</main>
 
 <script>
+/* Valores exibidos nos campos de EXP (somente leitura). Ajuste aqui quando tiver a tabela de experiência. */
+const EXP_ATUAL = 22527464;
+const EXP_PROXIMO = 423336;
+
 /* Se true, os bônus só contam a cada bloco completo de 10 pontos (ex.: 19 pts = 1 bloco).
    Se false, o cálculo é proporcional (ex.: 15 pts = 1,5 bloco). */
 const USAR_BLOCOS_COMPLETOS = false;
@@ -133,17 +177,32 @@ const MAESTRIAS = [
   {id:'dm', nome:'DM', desc:'Dano mágico', base:0},
 ];
 
+/* Bônus a cada 10 pontos de cada atributo: [rótulo, valor, unidade, dica] */
+const BONUS = [
+  {attr:'forca', nome:'Força', itens:[['Dano Físico',2,''],['Vida',1,''],['Fôlego',4.1,'']]},
+  {attr:'constituicao', nome:'Constituição', itens:[['Vida',20,'']]},
+  {attr:'agilidade', nome:'Agilidade', itens:[['Esquiva (Fís/Mag)',5,''],['Fôlego',4.3,''],['Vel. Movimento',0.1,'%']]},
+  {attr:'destreza', nome:'Destreza', itens:[
+    ['Acerto (Fís/Mag)',3,''],
+    ['Tempo entre Atq',-0.1,'%'],
+    ['Chance Status',0.1,'%','Sangramento, queimadura, lentidão e veneno'],
+    ['Chance Violência',0.2,'%']]},
+  {attr:'mente', nome:'Mente', itens:[['Dano Mágico',1,''],['Energia',4.9,'']]},
+  {attr:'espirito', nome:'Espírito', itens:[['Energia',6.9,''],['Defesa Mágica',0.4,''],['Dano Magia (Área)',1,'']]},
+];
+
 const $ = id => document.getElementById(id);
 const levelEl = $('level'), resetEl = $('reset');
 
 for (let i = 0; i <= 20; i++) resetEl.add(new Option(i, i));
+$('expAtual').textContent = EXP_ATUAL.toLocaleString('pt-BR');
+$('expProx').textContent = EXP_PROXIMO.toLocaleString('pt-BR');
 
 function buildFields(list, container){
   container.innerHTML = list.map(f => `
-    <div class="field">
+    <div class="card field"${f.desc ? ` title="${f.desc}"` : ''}>
       <label for="${f.id}">${f.nome}</label>
-      <input id="${f.id}" type="number" inputmode="numeric" min="${f.base}" value="${f.base}" data-base="${f.base}">
-      <small>${f.desc || ''}</small>
+      <input id="${f.id}" type="number" inputmode="numeric" min="${f.base}" value="${f.base}">
     </div>`).join('');
 }
 buildFields(ATRIBUTOS, $('attrGrid'));
@@ -169,6 +228,7 @@ const totalMast = () => 15 + 5*(getLevel()-1) + 50*getReset();
 
 const val = f => { const v = parseInt($(f.id).value, 10); return isNaN(v) ? f.base : Math.max(f.base, v); };
 const spent = list => list.reduce((s,f)=> s + (val(f) - f.base), 0);
+const num = n => String(Math.round(Math.abs(n) * 100) / 100);
 
 /* ---------- Validação ---------- */
 function validateGroup(list, total, changedField, label){
@@ -195,42 +255,43 @@ function enforceTotals(){
 }
 
 /* ---------- Render ---------- */
-const fmt = (n, d=1) => {
-  const r = Math.round(n * 100) / 100;
-  return r.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:2});
-};
-
 function render(){
   const availA = totalAttr() - spent(ATRIBUTOS);
   const availM = totalMast() - spent(MAESTRIAS);
-  $('attrAvail').textContent = `Pontos disponíveis: ${availA}`;
-  $('mastAvail').textContent = `Pontos disponíveis: ${availM}`;
+  $('attrAvail').textContent = availA;
+  $('mastAvail').textContent = availM;
   $('attrAvail').classList.toggle('zero', availA === 0);
   $('mastAvail').classList.toggle('zero', availM === 0);
 
-  const b = id => { const v = val(ATRIBUTOS.find(a=>a.id===id)); return USAR_BLOCOS_COMPLETOS ? Math.floor(v/10) : v/10; };
-  const F = b('forca'), C = b('constituicao'), A = b('agilidade'),
-        D = b('destreza'), M = b('mente'), E = b('espirito');
+  const blocos = id => {
+    const v = val(ATRIBUTOS.find(a => a.id === id));
+    return USAR_BLOCOS_COMPLETOS ? Math.floor(v/10) : v/10;
+  };
 
+  // 4º quadrante: bônus por atributo
+  $('bonus').innerHTML = BONUS.map(b => {
+    const k = blocos(b.attr);
+    const li = b.itens.map(([rot, v, un, dica]) => {
+      const t = v * k;
+      return `<li${dica ? ` title="${dica}"` : ''}><b>${t < 0 ? '-' : '+'}${num(t)}${un}</b> ${rot}</li>`;
+    }).join('');
+    return `<div class="card bonus"><h3>${b.nome}</h3><ul>${li}</ul></div>`;
+  }).join('');
+
+  // 5º quadrante: status finais (atributos + maestrias de acerto/esquiva)
+  const A = blocos('agilidade'), D = blocos('destreza'), E = blocos('espirito');
+  const cb = val(MAESTRIAS[0]), esqf = val(MAESTRIAS[1]), ea = val(MAESTRIAS[2]);
   const finais = [
-    ['Dano Físico',        2*F],
-    ['Vida',               1*F + 20*C],
-    ['Fôlego',             4.1*F + 4.3*A],
-    ['Dano Mágico',        1*M],
-    ['Energia',            4.9*M + 6.9*E],
-    ['Defesa Mágica',      0.4*E],
-    ['Dano Magias de Área',1*E],
+    ['Acerto Físico',  3*D + cb,   'fis'],
+    ['Esquiva Física', 5*A + esqf, 'fis'],
+    ['Defesa Física',  0,          'fis'],
+    ['Acerto Mágico',  3*D + ea,   'mag'],
+    ['Esquiva Mágica', 5*A,        'mag'],
+    ['Defesa Mágica',  0.4*E,      'mag'],
   ];
-  const bonus = [
-    ['Esquiva (Física e Mágica)',                   5*A, ''],
-    ['Velocidade de Movimento',                     0.1*A, '%'],
-    ['Acerto (Físico e Mágico)',                    3*D, ''],
-    ['Menos tempo entre ataques',                   0.1*D, '%'],
-    ['Chance de sangramento/queimadura/lentidão/veneno', 0.1*D, '%'],
-    ['Chance de violência',                         0.2*D, '%'],
-  ];
-  $('finais').innerHTML = finais.map(([n,v]) => `<li><span>${n}</span><span>+${fmt(v)}</span></li>`).join('');
-  $('bonus').innerHTML  = bonus.map(([n,v,u]) => `<li><span>${n}</span><span>+${fmt(v)}${u}</span></li>`).join('');
+  $('finais').innerHTML = finais.map(([n, v, cls]) =>
+    `<div class="card final ${cls}${Math.round(v*100) === 0 ? ' zero' : ''}"><small>${n}</small><strong>${num(v)}</strong></div>`
+  ).join('');
 }
 
 /* ---------- Eventos ---------- */
