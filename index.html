@@ -35,6 +35,14 @@
     letter-spacing:.08em;text-shadow:0 0 8px rgba(0,0,0,.9),0 1px 0 #000;pointer-events:none}
   .o.hit{border-radius:0}
 
+  /* ---- barras de vida / mana / fôlego ---- */
+  .o.barra{border:1px solid #000;border-radius:3px;color:#fff;letter-spacing:.03em;
+    text-shadow:0 1px 2px #000,0 0 3px rgba(0,0,0,.8);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -4px 8px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.6)}
+  .o.barra.vida{background:linear-gradient(180deg,#e04848 0%,#b01c1c 45%,#6e0f0f 100%)}
+  .o.barra.mana{background:linear-gradient(180deg,#6a74f0 0%,#3a42b8 45%,#1f2470 100%)}
+  .o.barra.folego{background:linear-gradient(180deg,#52c45e 0%,#2f8a3a 45%,#1a5524 100%)}
+
   /* ---- bônus ---- */
   .sec{margin-top:16px;border:2px solid var(--frame);border-radius:8px;background:linear-gradient(180deg,#17100a,#0e0a07);padding:16px 18px}
   h2{margin:0 0 12px;font-family:Georgia,"Palatino Linotype",serif;font-weight:400;font-size:1.15rem;letter-spacing:1px;color:var(--gold)}
@@ -71,9 +79,11 @@
 </div>
 
 <script>
-/* Valores dos campos de EXP (somente leitura). Ajuste quando houver a tabela de experiência. */
-const EXP_ATUAL = 22527464;
-const EXP_PROXIMO = 423336;
+/* Vida, mana e fôlego por level, medidos no jogo: [vida, mana, fôlego] nos levels 1 a 4.
+   O ganho por level é a média das diferenças entre levels. Acima do level 4 o ganho é extrapolado. */
+const TABELA_LEVEL = [[26,12,9],[31,13,10],[36,14,11],[41,15,12]];
+const BASE_LVL1 = TABELA_LEVEL[0];
+const POR_LEVEL = [0,1,2].map(i => (TABELA_LEVEL[TABELA_LEVEL.length-1][i] - TABELA_LEVEL[0][i]) / (TABELA_LEVEL.length - 1));
 
 /* true = bônus só a cada bloco completo de 10 pontos; false = proporcional. */
 const USAR_BLOCOS_COMPLETOS = false;
@@ -138,8 +148,9 @@ function mk(tag, cls, rect, fs, props){
 }
 
 mk('input','nome',[34,61,462,106],22,{id:'nome',type:'text',value:'Guerreiro de Tuohence',maxLength:40,title:'Nome do personagem'});
-const expA = mk('div','exp right',[505,47,802,79],22,{title:'Experiência atual'});
-const expP = mk('div','exp right',[505,93,802,125],22,{title:'Experiência para o próximo level'});
+const barVida   = mk('div','barra vida',  [505,47,802,71],  15,{title:'Vida'});
+const barMana   = mk('div','barra mana',  [505,74,802,98],  15,{title:'Mana'});
+const barFolego = mk('div','barra folego',[505,101,802,125],15,{title:'Fôlego'});
 mk('input','',[52,160,128,200],22,{id:'level',type:'number',min:1,max:299,value:1,title:'Level (1–299)'});
 mk('div','lbl left',[135,160,195,200],15,{text:'Level'});
 const resetEl = mk('select','',[197,160,273,200],22,{id:'reset',title:'Reset (0–20)'});
@@ -183,8 +194,11 @@ function getLevel(){
   return Math.min(299, Math.max(1, l));
 }
 const getReset = () => parseInt(resetEl.value, 10) || 0;
-const totalAttr = () => 30 + 10*(getLevel()-1) + 100*getReset();
-const totalMast = () => 15 + 5*(getLevel()-1) + 50*getReset();
+/* Reset 0 começa com 30 de atributo e 15 de maestria.
+   A partir do Reset 1 o início é 100 × reset (atributo) e 50 × reset (maestria); os 30/15 não entram.
+   Em ambos os casos cada level acima do 1 soma +10 de atributo e +5 de maestria. */
+const totalAttr = () => (getReset() === 0 ? 30 : 100*getReset()) + 10*(getLevel()-1);
+const totalMast = () => (getReset() === 0 ? 15 : 50*getReset()) + 5*(getLevel()-1);
 const val = f => { const v = parseInt($(f.id).value, 10); return isNaN(v) ? f.base : Math.max(f.base, v); };
 const spent = list => list.reduce((s,f)=> s + (val(f) - f.base), 0);
 const num = n => String(Math.round(Math.abs(n) * 100) / 100);
@@ -212,8 +226,6 @@ function enforceTotals(){
 
 /* ---------- Render ---------- */
 function render(){
-  expA.textContent = EXP_ATUAL.toLocaleString('pt-BR').replace(/\./g, '');
-  expP.textContent = EXP_PROXIMO.toLocaleString('pt-BR').replace(/\./g, '');
   ptsA.textContent = totalAttr() - spent(ATRIBUTOS);
   ptsM.textContent = totalMast() - spent(MAESTRIAS);
 
@@ -232,6 +244,17 @@ function render(){
   }).join('');
 
   const A = blocos('agilidade'), D = blocos('destreza'), E = blocos('espirito');
+
+  /* Barras: base do level 1 + ganho por level + bônus dos pontos acima dos 10 iniciais.
+     Com os atributos iniciais (10) o level 1 mostra 26/12/9, como no jogo. */
+  const lv = getLevel() - 1;
+  const dF = blocos('forca') - 1, dC = blocos('constituicao') - 1, dA = A - 1,
+        dM = blocos('mente') - 1, dE = E - 1;
+  const vida   = BASE_LVL1[0] + POR_LEVEL[0]*lv + 20*dC + 1*dF;
+  const mana   = BASE_LVL1[1] + POR_LEVEL[1]*lv + 4.9*dM + 6.9*dE;
+  const folego = BASE_LVL1[2] + POR_LEVEL[2]*lv + 4.1*dF + 4.3*dA;
+  const barra = (el, v) => { const n = Math.floor(v + 1e-9); el.textContent = `${n} / ${n}`; };
+  barra(barVida, vida); barra(barMana, mana); barra(barFolego, folego);
   const cb = val(MAESTRIAS[0]), esqf = val(MAESTRIAS[1]), ea = val(MAESTRIAS[2]);
   const finais = [3*D + cb, 5*A + esqf, 0, 3*D + ea, 5*A, 0.4*E];
   finais.forEach((v, i) => statOut[i].textContent = num(v));
