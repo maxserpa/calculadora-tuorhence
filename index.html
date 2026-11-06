@@ -9,7 +9,7 @@
   *{box-sizing:border-box}
   body{margin:0;background:#0b0805;color:var(--text);padding:16px;min-height:100vh;
     font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
-  .wrap{max-width:816px;margin:0 auto}
+  .wrap{max-width:600px;margin:0 auto}
 
   /* ---- palco com a imagem de fundo ---- */
   .stage{position:relative;width:100%;aspect-ratio:816/788;container-type:inline-size;
@@ -55,6 +55,15 @@
   .bonus li{font-size:.78rem;line-height:1.6;color:#d8cfbd}
   .bonus li b{color:#e0b45a;font-weight:600}
 
+  /* ---- botão de print ---- */
+  .acoes{display:flex;justify-content:center;margin-top:16px}
+  #btnPrint{background:linear-gradient(180deg,#3a2a14,#1c130a);color:var(--gold-l);border:1px solid var(--frame);
+    border-radius:6px;padding:10px 30px;font-family:Georgia,"Palatino Linotype",serif;font-size:1rem;letter-spacing:1px;
+    cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 8px rgba(0,0,0,.6)}
+  #btnPrint:hover{border-color:var(--gold);color:#fff}
+  #btnPrint:active{transform:translateY(1px)}
+  #btnPrint:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
   /* ---- toast ---- */
   #toasts{position:fixed;top:16px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:99;
     max-width:min(360px,calc(100vw - 32px))}
@@ -76,6 +85,7 @@
     <h2>Bônus Adquiridos pelos Atributos</h2>
     <div class="cards3" id="bonus"></div>
   </section>
+  <div class="acoes"><button type="button" id="btnPrint">Salvar print</button></div>
 </div>
 
 <script>
@@ -89,6 +99,7 @@ const POR_LEVEL = [0,1,2].map(i => (TABELA_LEVEL[TABELA_LEVEL.length-1][i] - TAB
 const USAR_BLOCOS_COMPLETOS = false;
 
 const IMG_W = 816, IMG_H = 788;
+let bonusData = [];   // últimos bônus calculados (usados na tela e no print)
 
 const ATRIBUTOS = [
   {id:'forca', nome:'Força', base:10, x:[78,142], icon:[52,172]},
@@ -234,14 +245,17 @@ function render(){
     return USAR_BLOCOS_COMPLETOS ? Math.floor(v/10) : v/10;
   };
 
-  $('bonus').innerHTML = BONUS.map(b => {
+  bonusData = BONUS.map(b => {
     const k = blocos(b.attr);
-    const li = b.itens.map(([rot, v, un, dica]) => {
+    return {nome: b.nome, linhas: b.itens.map(([rot, v, un, dica]) => {
       const t = v * k;
-      return `<li${dica ? ` title="${dica}"` : ''}><b>${t < 0 ? '-' : '+'}${num(t)}${un}</b> ${rot}</li>`;
-    }).join('');
-    return `<div class="card bonus"><h3>${b.nome}</h3><ul>${li}</ul></div>`;
-  }).join('');
+      return {val: `${t < 0 ? '-' : '+'}${num(t)}${un}`, rot, dica};
+    })};
+  });
+  $('bonus').innerHTML = bonusData.map(b =>
+    `<div class="card bonus"><h3>${b.nome}</h3><ul>${b.linhas.map(l =>
+      `<li${l.dica ? ` title="${l.dica}"` : ''}><b>${l.val}</b> ${l.rot}</li>`).join('')}</ul></div>`
+  ).join('');
 
   const A = blocos('agilidade'), D = blocos('destreza'), E = blocos('espirito');
 
@@ -286,6 +300,126 @@ levelEl.addEventListener('input', () => {
 });
 levelEl.addEventListener('change', () => { levelEl.value = getLevel(); enforceTotals(); render(); });
 resetEl.addEventListener('change', () => { enforceTotals(); render(); });
+
+/* ---------- Salvar print (PNG) ----------
+   Desenha o quadro principal (no tamanho original da imagem) e os bônus em um canvas e baixa como PNG. */
+const SANS = '"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif';
+const SERIF = 'Georgia, "Palatino Linotype", serif';
+const BAR_CORES = {
+  vida:   ['#e04848', '#b01c1c', '#6e0f0f'],
+  mana:   ['#6a74f0', '#3a42b8', '#1f2470'],
+  folego: ['#52c45e', '#2f8a3a', '#1a5524'],
+};
+function caminho(c, x, y, w, h, r){
+  c.beginPath();
+  if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h);
+}
+
+function salvarPrint(){
+  try{
+    const stageRect = stage.getBoundingClientRect();
+    const k = IMG_W / stageRect.width;            // px da tela -> px da imagem original
+    const PAD = 16, GAP = 16, SP = 18, CG = 12, COLS = 3;
+
+    // medidas do bloco de bônus
+    const cardW = (IMG_W - 2*SP - (COLS-1)*CG) / COLS;
+    const rows = [];
+    for (let i = 0; i < bonusData.length; i += COLS) rows.push(bonusData.slice(i, i + COLS));
+    const rowH = rows.map(r => 12 + 26 + Math.max(...r.map(b => b.linhas.length)) * 21 + 8);
+    const secH = SP + 34 + rowH.reduce((s, h) => s + h, 0) + (rows.length - 1) * CG + SP;
+
+    const W = IMG_W + 2*PAD, H = PAD + IMG_H + GAP + secH + PAD;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#0b0805'; c.fillRect(0, 0, W, H);
+    c.drawImage(stage.querySelector('img'), PAD, PAD, IMG_W, IMG_H);
+
+    // campos e textos sobre a imagem
+    stage.querySelectorAll('.o').forEach(el => {
+      const txt = el.tagName === 'INPUT' ? el.value
+                : el.tagName === 'SELECT' ? el.options[el.selectedIndex].text
+                : el.textContent;
+      if (!txt) return;
+      const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+      const x = PAD + (r.left - stageRect.left) * k, y = PAD + (r.top - stageRect.top) * k;
+      const w = r.width * k, h = r.height * k;
+      const fs = parseFloat(cs.fontSize) * k;
+
+      if (el.classList.contains('barra')){
+        const cor = BAR_CORES[['vida','mana','folego'].find(n => el.classList.contains(n))];
+        const g = c.createLinearGradient(0, y, 0, y + h);
+        g.addColorStop(0, cor[0]); g.addColorStop(.45, cor[1]); g.addColorStop(1, cor[2]);
+        caminho(c, x, y, w, h, 3*k); c.fillStyle = g; c.fill();
+        c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(x + 2*k, y + k, w - 4*k, k);
+        caminho(c, x + .5, y + .5, w - 1, h - 1, 3*k); c.strokeStyle = '#000'; c.lineWidth = k; c.stroke();
+      }
+
+      c.font = `${cs.fontVariantCaps === 'small-caps' ? 'small-caps ' : ''}${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+      c.fillStyle = cs.color; c.textBaseline = 'middle';
+      if ('letterSpacing' in c) c.letterSpacing = ((parseFloat(cs.letterSpacing) || 0) * k) + 'px';
+      c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
+      if (el.classList.contains('barra')){ c.shadowColor = 'rgba(0,0,0,.9)'; c.shadowBlur = 2*k; c.shadowOffsetY = k; }
+      if (el.classList.contains('lbl'))  { c.shadowColor = 'rgba(255,235,190,.55)'; c.shadowOffsetY = k; }
+      if (el.classList.contains('orn'))  { c.shadowColor = 'rgba(0,0,0,.9)'; c.shadowBlur = 8*k; c.shadowOffsetY = k; }
+
+      const pl = parseFloat(cs.paddingLeft) * k, pr = parseFloat(cs.paddingRight) * k, al = cs.textAlign;
+      let tx;
+      if (al === 'left' || al === 'start'){ c.textAlign = 'left'; tx = x + pl; }
+      else if (al === 'right' || al === 'end'){ c.textAlign = 'right'; tx = x + w - pr; }
+      else { c.textAlign = 'center'; tx = x + (pl + w - pr) / 2; }
+      c.fillText(txt, tx, y + h / 2 + fs * 0.04);
+      if ('letterSpacing' in c) c.letterSpacing = '0px';
+      c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
+    });
+
+    // bloco de bônus
+    const sy = PAD + IMG_H + GAP;
+    const fundo = c.createLinearGradient(0, sy, 0, sy + secH);
+    fundo.addColorStop(0, '#17100a'); fundo.addColorStop(1, '#0e0a07');
+    caminho(c, PAD + 1, sy + 1, IMG_W - 2, secH - 2, 8); c.fillStyle = fundo; c.fill();
+    c.strokeStyle = '#6a4a24'; c.lineWidth = 2; c.stroke();
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = `400 20px ${SERIF}`; c.fillStyle = '#d9a441';
+    c.fillText('Bônus Adquiridos pelos Atributos', PAD + SP, sy + SP + 18);
+
+    rows.forEach((linha, ri) => {
+      const y0 = sy + SP + 34 + rowH.slice(0, ri).reduce((s, h) => s + h, 0) + ri * CG;
+      linha.forEach((b, ci) => {
+        const x0 = PAD + SP + ci * (cardW + CG);
+        caminho(c, x0 + .5, y0 + .5, cardW - 1, rowH[ri] - 1, 6); c.fillStyle = '#15100b'; c.fill();
+        c.strokeStyle = '#3b2a17'; c.lineWidth = 1; c.stroke();
+        c.font = `400 16px ${SERIF}`; c.fillStyle = '#d9a441';
+        c.fillText(b.nome, x0 + 12, y0 + 12 + 14);
+        c.setLineDash([2, 3]); c.strokeStyle = '#4a3319';
+        c.beginPath(); c.moveTo(x0 + 12, y0 + 12 + 20); c.lineTo(x0 + cardW - 12, y0 + 12 + 20); c.stroke();
+        c.setLineDash([]);
+        b.linhas.forEach((l, i) => {
+          const ly = y0 + 12 + 26 + i * 21 + 15;
+          c.font = `600 14.5px ${SANS}`; c.fillStyle = '#e0b45a';
+          c.fillText(l.val, x0 + 12, ly);
+          const vw = c.measureText(l.val).width;
+          c.font = `400 14.5px ${SANS}`; c.fillStyle = '#d8cfbd';
+          c.fillText(l.rot, x0 + 12 + vw + 6, ly);
+        });
+      });
+    });
+
+    cv.toBlob(blob => {
+      if (!blob){ toast('Não foi possível gerar o print.'); return; }
+      const nome = ($('nome').value || 'personagem').trim().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'personagem';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `tuorhence-${nome}-lvl${getLevel()}-r${getReset()}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      const btn = $('btnPrint'); btn.textContent = 'Print salvo!';
+      setTimeout(() => { btn.textContent = 'Salvar print'; }, 1800);
+    }, 'image/png');
+  } catch (e){
+    toast('Não foi possível gerar o print.');
+  }
+}
+$('btnPrint').addEventListener('click', salvarPrint);
 
 render();
 </script>
