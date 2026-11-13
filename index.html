@@ -81,6 +81,12 @@
   .pk-head button{background:none;border:0;color:var(--text);font-size:1.4rem;cursor:pointer;line-height:1}
   #pkBusca{background:#0e0a07;border:1px solid var(--line);border-radius:4px;color:var(--text);padding:8px 10px;font:inherit;font-size:.9rem}
   #pkBusca:focus{outline:none;border-color:var(--gold)}
+  #pkChips{display:flex;flex-wrap:wrap;gap:6px}
+  #pkChips:empty{display:none}
+  .chip{background:#1d140b;border:1px solid var(--line);color:#d8cfbd;border-radius:999px;padding:3px 10px;font:inherit;font-size:.76rem;cursor:pointer}
+  .chip:hover{border-color:var(--gold)}
+  .chip.on{background:var(--gold);color:#1a1008;border-color:var(--gold);font-weight:600}
+  .chip small{opacity:.7;margin-left:3px}
   #pkInfo{font-size:.74rem;color:var(--muted)}
   #pkLista{list-style:none;margin:0;padding:0;overflow:auto;flex:1;min-height:120px;border:1px solid var(--line);border-radius:4px}
   #pkLista li{padding:7px 10px;border-bottom:1px solid #261a0e;cursor:pointer}
@@ -90,6 +96,11 @@
   #pkLista .id{font-size:.72rem;color:var(--muted);margin-top:1px}
   #pkRemover{align-self:flex-start;background:#3a1010;border:1px solid #a03030;color:#ffd9d9;border-radius:4px;padding:6px 12px;cursor:pointer;font:inherit;font-size:.82rem}
   #pkRemover[hidden]{display:none}
+
+  .dano2{grid-template-columns:repeat(2,1fr)}
+  .dano{display:flex;flex-direction:column;gap:2px;padding:10px 14px}
+  .dano .dl{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .dano b{font-size:1.5rem;color:var(--gold-l);font-weight:600}
 
   /* ---- botão de print ---- */
   .acoes{display:flex;justify-content:center;margin-top:16px}
@@ -108,7 +119,7 @@
   .toast.out{opacity:0;transform:translateX(20px);transition:.3s}
   @keyframes in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
   @media(max-width:640px){.cards3,.eqgrid{grid-template-columns:repeat(2,1fr)}.sec{padding:14px}}
-  @media(max-width:400px){.cards3,.eqgrid{grid-template-columns:1fr}}
+  @media(max-width:400px){.cards3,.eqgrid{grid-template-columns:1fr}.dano2{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -123,6 +134,13 @@
     <div class="resumo" id="eqresumo"></div>
   </section>
   <section class="sec">
+    <h2>Dano Total</h2>
+    <div class="cards3 dano2">
+      <div class="card dano"><span class="dl">Dano físico total</span><b id="danoFis">0</b></div>
+      <div class="card dano"><span class="dl">Dano mágico total</span><b id="danoMag">0</b></div>
+    </div>
+  </section>
+  <section class="sec">
     <h2>Bônus Adquiridos pelos Atributos</h2>
     <div class="cards3" id="bonus"></div>
   </section>
@@ -133,6 +151,7 @@
   <div class="pk-box" role="dialog" aria-modal="true" aria-labelledby="pkTitulo">
     <div class="pk-head"><span id="pkTitulo"></span><button type="button" id="pkFechar" aria-label="Fechar">×</button></div>
     <input id="pkBusca" type="search" placeholder="Buscar item pelo nome..." autocomplete="off">
+    <div id="pkChips"></div>
     <div id="pkInfo"></div>
     <ul id="pkLista"></ul>
     <button type="button" id="pkRemover" hidden>Remover item</button>
@@ -150,6 +169,7 @@ const POR_LEVEL = [0,1,2].map(i => (TABELA_LEVEL[TABELA_LEVEL.length-1][i] - TAB
 const USAR_BLOCOS_COMPLETOS = false;
 
 const IMG_W = 816, IMG_H = 788;
+let danoTot = [0,0];
 let bonusData = [];   // últimos bônus calculados (usados na tela e no print)
 
 const ATRIBUTOS = [
@@ -397,14 +417,35 @@ let tReq = null;
 const agendarRequisitos = () => { clearTimeout(tReq); tReq = setTimeout(aplicarRequisitos, 900); };
 
 /* ---- seletor ---- */
-let pkSlot = null;
+let pkSlot = null, pkAttr = null, pkMao = null;
 const picker = $('picker'), pkBusca = $('pkBusca'), pkLista = $('pkLista');
 function listaPicker(){
   const q = pkBusca.value.trim().toLowerCase();
   const outro = pkSlot.id === 'anel1' ? equip.anel2 : pkSlot.id === 'anel2' ? equip.anel1 : null;
   const todos = ITENS.filter(i => pkSlot.tipos.includes(i.t));
   const ok = todos.filter(i => atende(i) && !(outro && outro.n === i.n));
-  const vis = q ? ok.filter(i => i.n.toLowerCase().includes(q)) : ok;
+  /* filtros rápidos: só aparecem os que existem entre os itens disponíveis deste campo */
+  const chips = [];
+  if (pkSlot.tipos.length > 1){
+    const n1 = ok.filter(i => i.t === 'arma1m').length, n2 = ok.filter(i => i.t === 'arma2m').length;
+    if (n1 && n2) chips.push(['mao', '1m', '1 mão', n1], ['mao', '2m', '2 mãos', n2]);
+  }
+  const atrs = Object.keys(ATTR_ID).map(a => [a, ok.filter(i => a in i.r).length]).filter(x => x[1]);
+  if (atrs.length > 1) atrs.forEach(([a, n]) => chips.push(['attr', a, a, n]));
+  if (pkAttr && !atrs.some(x => x[0] === pkAttr)) pkAttr = null;
+  $('pkChips').innerHTML = '';
+  chips.forEach(([g, v, rot, n]) => {
+    const b = document.createElement('button'); b.type = 'button';
+    const on = g === 'attr' ? pkAttr === v : pkMao === v;
+    b.className = 'chip' + (on ? ' on' : ''); b.setAttribute('aria-pressed', on);
+    b.innerHTML = `${esc(rot)}<small>${n}</small>`;
+    b.addEventListener('click', () => { if (g === 'attr') pkAttr = on ? null : v; else pkMao = on ? null : v; listaPicker(); });
+    $('pkChips').appendChild(b);
+  });
+  let vis = ok;
+  if (pkAttr) vis = vis.filter(i => pkAttr in i.r);
+  if (pkMao) vis = vis.filter(i => i.t === (pkMao === '1m' ? 'arma1m' : 'arma2m'));
+  if (q) vis = vis.filter(i => i.n.toLowerCase().includes(q));
   $('pkInfo').textContent = `${vis.length} disponíveis` + (todos.length - ok.length > 0 ? ` · ${todos.length - ok.length} ocultos (requisito não atendido${outro ? ' ou já no outro anel' : ''})` : '');
   pkLista.innerHTML = '';
   vis.forEach(i => {
@@ -424,7 +465,7 @@ function listaPicker(){
 }
 function abrirPicker(sl){
   if (sl.id === 'maoE' && maoETravada()){ toast('A mão esquerda está bloqueada: a arma de 2 mãos ocupa as duas mãos.'); return; }
-  pkSlot = sl; pkBusca.value = '';
+  pkSlot = sl; pkBusca.value = ''; pkAttr = null; pkMao = null;
   $('pkTitulo').textContent = sl.nome;
   $('pkRemover').hidden = !equip[sl.id];
   picker.hidden = false; listaPicker(); pkBusca.focus();
@@ -483,7 +524,14 @@ function render(){
   const finais = [3*D + cb, 5*A + esqf, 0, 3*D + ea, 5*A, 0.4*E].map((v, i) => v + eq[i]);
   finais.forEach((v, i) => statOut[i].textContent = num(v));
   atualizarEquipUI();
+
+  /* Dano total = dano da arma equipada + bônus de atributo (Força: +2 / Mente: +1 a cada 10 pontos) */
+  const arma = equip.maoD && atende(equip.maoD) ? equip.maoD : null;
+  danoTot = [sv0(arma,'Dano físico') + 2*blocos('forca'), sv0(arma,'Dano mágico') + 1*blocos('mente')];
+  $('danoFis').textContent = fmt(danoTot[0]);
+  $('danoMag').textContent = fmt(danoTot[1]);
 }
+const sv0 = (it, k) => it && it.s[k] ? it.s[k][0] : 0;
 
 /* ---------- Eventos ---------- */
 function bindGroup(list, totalFn, label){
@@ -549,7 +597,8 @@ function salvarPrint(){
     const eqCols = 3, eqCardH = 46, eqRows = Math.ceil(SLOTS_EQ.length / eqCols);
     const eqH = SP + 34 + eqRows * eqCardH + (eqRows - 1) * 10 + (eqLinhas.length ? 14 + eqLinhas.length * 21 : 0) + SP;
 
-    const W = IMG_W + 2*PAD, H = PAD + IMG_H + GAP + eqH + GAP + secH + PAD;
+    const dtH = SP + 34 + 50 + SP;
+    const W = IMG_W + 2*PAD, H = PAD + IMG_H + GAP + eqH + GAP + dtH + GAP + secH + PAD;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
     c.fillStyle = '#0b0805'; c.fillRect(0, 0, W, H);
@@ -624,8 +673,26 @@ function salvarPrint(){
       ly += 21;
     });
 
+    // bloco de dano total
+    const dy = ey + eqH + GAP;
+    const dfundo = c.createLinearGradient(0, dy, 0, dy + dtH);
+    dfundo.addColorStop(0, '#17100a'); dfundo.addColorStop(1, '#0e0a07');
+    caminho(c, PAD + 1, dy + 1, IMG_W - 2, dtH - 2, 8); c.fillStyle = dfundo; c.fill();
+    c.strokeStyle = '#6a4a24'; c.lineWidth = 2; c.stroke();
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = `400 20px ${SERIF}`; c.fillStyle = '#d9a441';
+    c.fillText('Dano Total', PAD + SP, dy + SP + 18);
+    const dW = (IMG_W - 2*SP - CG) / 2;
+    [['Dano físico total', danoTot[0]], ['Dano mágico total', danoTot[1]]].forEach(([rot, v], i) => {
+      const x0 = PAD + SP + i * (dW + CG), y0 = dy + SP + 34;
+      caminho(c, x0 + .5, y0 + .5, dW - 1, 49, 6); c.fillStyle = '#15100b'; c.fill();
+      c.strokeStyle = '#3b2a17'; c.lineWidth = 1; c.stroke();
+      c.font = `400 11px ${SANS}`; c.fillStyle = '#a79a82'; c.fillText(rot.toUpperCase(), x0 + 14, y0 + 17);
+      c.font = `600 22px ${SANS}`; c.fillStyle = '#f0d58a'; c.fillText(fmt(v), x0 + 14, y0 + 40);
+    });
+
     // bloco de bônus
-    const sy = PAD + IMG_H + GAP + eqH + GAP;
+    const sy = dy + dtH + GAP;
     const fundo = c.createLinearGradient(0, sy, 0, sy + secH);
     fundo.addColorStop(0, '#17100a'); fundo.addColorStop(1, '#0e0a07');
     caminho(c, PAD + 1, sy + 1, IMG_W - 2, secH - 2, 8); c.fillStyle = fundo; c.fill();
